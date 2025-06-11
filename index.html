@@ -200,7 +200,7 @@
 
 <body>
   <div class="copy-notification" id="copyNotification">
-    링크가 클립보드에 복사되었습니다!
+    비밀번호가 클립보드에 복사되었습니다!
   </div>
 
   <div class="container">
@@ -365,11 +365,8 @@
       const baseUrl = 'https://knowmerce.github.io/infra-clipboard/';
       const shareUrl = `${baseUrl}?d=${encryptedData}`;
 
-      // 순수 URL만 저장
-      window.currentLink = shareUrl;
-
-      // 미리보기 표시
-      previewContent.innerHTML = `<a href="#" onclick="copyCurrentLink(); return false;">${name}</a>`;
+      // 미리보기 표시 - 드래그 가능한 하이퍼링크
+      previewContent.innerHTML = `<a href="${shareUrl}" target="_blank">${name}</a>`;
       linkPreview.classList.remove('hidden');
     }
 
@@ -399,11 +396,7 @@
       return decrypted;
     }
 
-    function copyCurrentLink() {
-      if (window.currentLink) {
-        copyToClipboard(window.currentLink);
-      }
-    }
+
 
     function copyToClipboard(text) {
       if (!text) return;
