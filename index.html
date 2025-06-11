@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <title>비밀번호 공유 링크 생성기</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+
+    textarea,
+    input,
+    button {
+      width: 100%;
+      margin-top: 1rem;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    code {
+      background: #f2f2f2;
+      padding: 0.2rem 0.4rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>🔐 비밀번호 공유 링크 생성기</h2>
+
+  <label for="pw">비밀번호 입력 또는 생성:</label>
+  <input type="text" id="pw" placeholder="직접 입력하거나 아래에서 생성하세요" />
+
+  <button onclick="generatePassword()">무작위 비밀번호 생성</button>
+
+  <label for="url">👇 이 링크를 복사해서 공유하세요:</label>
+  <textarea id="url" rows="2" readonly></textarea>
+
+  <script>
+    const baseUrl = window.location.origin + window.location.pathname;
+
+    function generatePassword() {
+      const length = 14;
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+      let pw = "";
+      for (let i = 0; i < length; i++) {
+        pw += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      document.getElementById("pw").value = pw;
+      makeLink();
+    }
+
+    function makeLink() {
+      const pw = document.getElementById("pw").value;
+      if (!pw) return alert("비밀번호를 입력하세요.");
+      const encoded = encodeURIComponent(btoa(pw));
+      const link = `${baseUrl}?value=${encoded}`;
+      document.getElementById("url").value = link;
+    }
+
+    document.getElementById("pw").addEventListener("input", makeLink);
+
+    // ▶ 클립보드 복사용 URL 실행 처리
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const val = params.get("value");
+      if (val) {
+        try {
+          const decoded = atob(decodeURIComponent(val));
+          navigator.clipboard.writeText(decoded).then(() => {
+            alert("비밀번호가 클립보드에 복사되었습니다.");
+            window.close();
+          }).catch(() => {
+            alert("클립보드 복사에 실패했습니다. 수동으로 복사하세요: " + decoded);
+          });
+        } catch (e) {
+          console.error("복호화 오류", e);
+          alert("복호화에 실패했습니다.");
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
