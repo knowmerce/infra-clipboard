@@ -39,18 +39,17 @@
       resize: none;
     }
 
-    #app,
-    #result {
+    #generator,
+    #copier {
       display: none;
     }
   </style>
 </head>
 
 <body>
-  <h2 id="title">🔐 비밀번호 공유 링크 생성기</h2>
+  <div id="generator">
+    <h2>🔐 비밀번호 공유 링크 생성기</h2>
 
-  <!-- 생성기 UI -->
-  <div id="app">
     <label for="pw">비밀번호 입력 또는 생성:</label>
     <div id="pw-wrapper">
       <input type="password" id="pw" placeholder="직접 입력하거나 아래에서 생성하세요" />
@@ -63,13 +62,17 @@
     <textarea id="url" rows="2" readonly></textarea>
   </div>
 
-  <!-- 복사 결과 메시지 -->
-  <div id="result">
+  <div id="copier">
     <p id="msg">복사 중입니다...</p>
   </div>
 
   <script>
     const baseUrl = window.location.origin + window.location.pathname;
+
+    function show(id) {
+      document.getElementById("generator").style.display = (id === "generator") ? "block" : "none";
+      document.getElementById("copier").style.display = (id === "copier") ? "block" : "none";
+    }
 
     function generatePassword() {
       const length = 14;
@@ -79,7 +82,7 @@
         pw += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       document.getElementById("pw").value = pw;
-      makeLink();
+      makeLink(); // 자동 링크 생성
     }
 
     function makeLink() {
@@ -98,42 +101,31 @@
       pwInput.type = pwInput.type === "password" ? "text" : "password";
     }
 
-    document.getElementById("pw").addEventListener("input", makeLink);
-
-    function show(id) {
-      document.getElementById("app").style.display = (id === "app") ? "block" : "none";
-      document.getElementById("result").style.display = (id === "result") ? "block" : "none";
-    }
-
-    function tryClose() {
-      setTimeout(() => {
-        window.open('', '_self'); // for Safari
-        window.close();
-      }, 2000);
-    }
-
-    // 엔트리 포인트
-    window.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", () => {
       const params = new URLSearchParams(window.location.search);
       const val = params.get("value");
 
       if (val) {
-        show("result");
+        show("copier");
         try {
           const decoded = atob(decodeURIComponent(val));
           navigator.clipboard.writeText(decoded).then(() => {
             document.getElementById("msg").innerText = "비밀번호가 클립보드에 복사되었습니다. 창이 곧 닫힙니다.";
-            tryClose();
+            setTimeout(() => {
+              window.open('', '_self'); // Safari용
+              window.close();
+            }, 2000);
           }).catch(() => {
-            document.getElementById("msg").innerText = "복사에 실패했습니다. 수동으로 복사하세요: " + decoded;
-            tryClose();
+            document.getElementById("msg").innerText = "복사 실패. 수동으로 복사하세요: " + decoded;
           });
         } catch (e) {
           document.getElementById("msg").innerText = "복호화에 실패했습니다.";
-          tryClose();
         }
       } else {
-        show("app");
+        show("generator");
+        // 입력 시마다 링크 자동 생성
+        const pwInput = document.getElementById("pw");
+        pwInput.addEventListener("input", makeLink);
       }
     });
   </script>
