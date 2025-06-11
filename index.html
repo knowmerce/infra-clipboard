@@ -3,131 +3,427 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>비밀번호 공유 링크 생성기</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>보안 비밀번호 공유 도구</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       max-width: 600px;
       margin: 2rem auto;
       padding: 1rem;
+      background: #f8f9fa;
+      color: #333;
     }
 
-    input,
-    button,
-    textarea {
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #555;
+    }
+
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
-      margin-top: 1rem;
-      padding: 0.5rem;
+      padding: 0.75rem;
+      border: 2px solid #e9ecef;
+      border-radius: 4px;
       font-size: 1rem;
     }
 
-    #pw-wrapper {
-      position: relative;
+    input:focus {
+      outline: none;
+      border-color: #007bff;
     }
 
-    #toggle-btn {
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .password-input {
+      flex: 1;
+      padding-right: 3rem;
+      font-family: monospace;
+    }
+
+    .generate-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .generate-btn:hover {
+      background: #218838;
+    }
+
+    .toggle-btn {
       position: absolute;
       right: 0.5rem;
-      top: 50%;
-      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    .toggle-btn:hover {
+      background: #f8f9fa;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.75rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background: #007bff;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+
+    .link-output {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #28a745;
+      border-radius: 4px;
+      background: #f8fff9;
+      font-family: monospace;
       font-size: 0.9rem;
-      padding: 0.3rem 0.6rem;
+      resize: none;
+      height: 80px;
+    }
+
+    .link-preview {
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      background: #f8f9fa;
+      border-radius: 4px;
+      border-left: 4px solid #007bff;
+    }
+
+    .link-preview a {
+      color: #007bff;
+      text-decoration: underline;
       cursor: pointer;
     }
 
-    textarea {
-      resize: none;
+    .link-preview a:hover {
+      color: #0056b3;
     }
 
-    #generator,
-    #copier {
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 1rem;
+      border-radius: 4px;
+      margin-top: 1rem;
+      text-align: center;
+    }
+
+    .viewer-container {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .password-display {
+      background: #f8f9fa;
+      padding: 2rem;
+      border-radius: 8px;
+      margin: 2rem 0;
+      border: 2px dashed #007bff;
+    }
+
+    .password-text {
+      font-family: monospace;
+      font-size: 1.5rem;
+      color: #007bff;
+      word-break: break-all;
+      user-select: all;
+    }
+
+    .copy-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 1rem;
+      border-radius: 4px;
+      display: none;
+      z-index: 1000;
+    }
+
+    .hidden {
       display: none;
     }
   </style>
 </head>
 
 <body>
-  <div id="generator">
-    <h2>🔐 비밀번호 공유 링크 생성기</h2>
-
-    <label for="pw">비밀번호 입력 또는 생성:</label>
-    <div id="pw-wrapper">
-      <input type="password" id="pw" placeholder="직접 입력하거나 아래에서 생성하세요" />
-      <button type="button" id="toggle-btn" onclick="togglePw()">👁️</button>
-    </div>
-
-    <button onclick="generatePassword()">무작위 비밀번호 생성</button>
-
-    <label for="url">👇 이 링크를 복사해 Slack에 공유하세요:</label>
-    <textarea id="url" rows="2" readonly></textarea>
+  <div class="copy-notification" id="copyNotification">
+    하이퍼링크가 클립보드에 복사되었습니다!
   </div>
 
-  <div id="copier">
-    <p id="msg">복사 중입니다...</p>
+  <div class="container">
+    <!-- 생성 모드 -->
+    <div id="generatorMode">
+      <h1>🔐 비밀번호 공유 도구</h1>
+
+      <div class="form-group">
+        <label for="nameInput">링크 이름</label>
+        <input type="text" id="nameInput" placeholder="예: DB 비밀번호, 서버 접속키 등">
+      </div>
+
+      <div class="form-group">
+        <label for="passwordInput">비밀번호</label>
+        <div class="password-wrapper">
+          <button type="button" class="generate-btn" onclick="generateSecurePassword()">
+            🎲 생성
+          </button>
+          <input type="password" id="passwordInput" class="password-input" placeholder="비밀번호를 입력하세요">
+          <button type="button" class="toggle-btn" id="toggleBtn" onclick="togglePasswordVisibility()">👁️</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div id="linkPreview" class="link-preview hidden">
+          <strong>미리보기:</strong> <span id="previewContent"></span>
+        </div>
+      </div>
+
+
+    </div>
+
+    <!-- 뷰어 모드 -->
+    <div id="viewerMode" class="hidden">
+      <div class="viewer-container">
+        <h1>🔓 공유된 비밀번호</h1>
+        <div class="password-display">
+          <div class="password-text" id="sharedPassword"></div>
+        </div>
+        <p>비밀번호가 자동으로 복사되었습니다.</p>
+        <p>이 창은 5초 후 자동으로 닫힙니다.</p>
+      </div>
+    </div>
   </div>
 
   <script>
-    const baseUrl = window.location.origin + window.location.pathname;
+    let isPasswordVisible = false;
 
-    function show(id) {
-      document.getElementById("generator").style.display = (id === "generator") ? "block" : "none";
-      document.getElementById("copier").style.display = (id === "copier") ? "block" : "none";
-    }
+    // 페이지 로드 시 모드 결정
+    document.addEventListener('DOMContentLoaded', function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const encryptedData = urlParams.get('d');
 
-    function generatePassword() {
-      const length = 14;
-      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-      let pw = "";
-      for (let i = 0; i < length; i++) {
-        pw += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      document.getElementById("pw").value = pw;
-      makeLink(); // 자동 링크 생성
-    }
-
-    function makeLink() {
-      const pw = document.getElementById("pw").value;
-      if (!pw) {
-        document.getElementById("url").value = "";
-        return;
-      }
-      const encoded = encodeURIComponent(btoa(pw));
-      const link = `${baseUrl}?value=${encoded}`;
-      document.getElementById("url").value = link;
-    }
-
-    function togglePw() {
-      const pwInput = document.getElementById("pw");
-      pwInput.type = pwInput.type === "password" ? "text" : "password";
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(window.location.search);
-      const val = params.get("value");
-
-      if (val) {
-        show("copier");
-        try {
-          const decoded = atob(decodeURIComponent(val));
-          navigator.clipboard.writeText(decoded).then(() => {
-            document.getElementById("msg").innerText = "비밀번호가 클립보드에 복사되었습니다. 창이 곧 닫힙니다.";
-            setTimeout(() => {
-              window.open('', '_self'); // Safari용
-              window.close();
-            }, 2000);
-          }).catch(() => {
-            document.getElementById("msg").innerText = "복사 실패. 수동으로 복사하세요: " + decoded;
-          });
-        } catch (e) {
-          document.getElementById("msg").innerText = "복호화에 실패했습니다.";
-        }
+      if (encryptedData) {
+        showViewerMode(encryptedData);
       } else {
-        show("generator");
-        // 입력 시마다 링크 자동 생성
-        const pwInput = document.getElementById("pw");
-        pwInput.addEventListener("input", makeLink);
+        showGeneratorMode();
       }
     });
+
+    function showGeneratorMode() {
+      document.getElementById('generatorMode').classList.remove('hidden');
+      document.getElementById('viewerMode').classList.add('hidden');
+
+      // 입력 시 링크 자동 생성
+      document.getElementById('nameInput').addEventListener('input', generateLink);
+      document.getElementById('passwordInput').addEventListener('input', generateLink);
+    }
+
+    function showViewerMode(encryptedData) {
+      document.getElementById('generatorMode').classList.add('hidden');
+      document.getElementById('viewerMode').classList.remove('hidden');
+
+      try {
+        const password = decryptPassword(encryptedData);
+        document.getElementById('sharedPassword').textContent = password;
+
+        // 클립보드에 복사
+        copyToClipboard(password);
+
+        // 5초 후 창 닫기
+        setTimeout(() => {
+          window.close();
+        }, 5000);
+
+      } catch (error) {
+        document.getElementById('sharedPassword').textContent = '비밀번호 복호화에 실패했습니다.';
+      }
+    }
+
+    function togglePasswordVisibility() {
+      const passwordInput = document.getElementById('passwordInput');
+      const toggleBtn = document.getElementById('toggleBtn');
+
+      isPasswordVisible = !isPasswordVisible;
+
+      if (isPasswordVisible) {
+        passwordInput.type = 'text';
+        toggleBtn.textContent = '🙈';
+      } else {
+        passwordInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+      }
+    }
+
+    function generateSecurePassword() {
+      const length = 14;
+      const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+      const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const numbers = '0123456789';
+      const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+
+      let password = '';
+
+      // 각 카테고리에서 최소 1개씩 선택
+      password += getRandomChar(lowercase);
+      password += getRandomChar(uppercase);
+      password += getRandomChar(numbers);
+      password += getRandomChar(symbols);
+
+      // 나머지 자리는 모든 문자에서 랜덤 선택
+      const allChars = lowercase + uppercase + numbers + symbols;
+      for (let i = 4; i < length; i++) {
+        password += getRandomChar(allChars);
+      }
+
+      // 문자열 섞기
+      password = shuffleString(password);
+
+      document.getElementById('passwordInput').value = password;
+      generateLink();
+    }
+
+    function getRandomChar(str) {
+      return str.charAt(Math.floor(Math.random() * str.length));
+    }
+
+    function shuffleString(str) {
+      return str.split('').sort(() => Math.random() - 0.5).join('');
+    }
+
+    function generateLink() {
+      const name = document.getElementById('nameInput').value;
+      const password = document.getElementById('passwordInput').value;
+      const linkPreview = document.getElementById('linkPreview');
+      const previewContent = document.getElementById('previewContent');
+
+      if (!name || !password) {
+        linkPreview.classList.add('hidden');
+        return;
+      }
+
+      const encryptedData = encryptPassword(password);
+      const baseUrl = 'https://knowmerce.github.io/infra-clipboard/';
+      const shareUrl = `${baseUrl}?d=${encryptedData}`;
+
+      // HTML 하이퍼링크 형태로 생성
+      const hyperlink = `<a href="${shareUrl}">${name}</a>`;
+
+      // 미리보기 표시 및 클립보드 복사를 위해 전역 변수에 저장
+      window.currentHyperlink = hyperlink;
+
+      // 미리보기 표시
+      previewContent.innerHTML = `<a href="#" onclick="copyCurrentLink(); return false;">${name}</a>`;
+      linkPreview.classList.remove('hidden');
+    }
+
+    function encryptPassword(password) {
+      // 간단한 XOR 암호화 (실제 운영환경에서는 더 강력한 암호화 필요)
+      const key = 'SecurePasswordShare2024';
+      let encrypted = '';
+
+      for (let i = 0; i < password.length; i++) {
+        const charCode = password.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+        encrypted += String.fromCharCode(charCode);
+      }
+
+      return btoa(encodeURIComponent(encrypted));
+    }
+
+    function decryptPassword(encryptedData) {
+      const key = 'SecurePasswordShare2024';
+      const encrypted = decodeURIComponent(atob(encryptedData));
+      let decrypted = '';
+
+      for (let i = 0; i < encrypted.length; i++) {
+        const charCode = encrypted.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+        decrypted += String.fromCharCode(charCode);
+      }
+
+      return decrypted;
+    }
+
+    function copyCurrentLink() {
+      if (window.currentHyperlink) {
+        copyToClipboard(window.currentHyperlink);
+      }
+    }
+
+    function copyToClipboard(text) {
+      if (!text) return;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showCopyNotification();
+      }).catch(() => {
+        // 폴백: 텍스트 선택 방식
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showCopyNotification();
+      });
+    }
+
+    function showCopyNotification() {
+      const notification = document.getElementById('copyNotification');
+      notification.style.display = 'block';
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 2000);
+    }
   </script>
 </body>
 
